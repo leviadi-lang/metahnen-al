@@ -35,6 +35,11 @@ const envSchema = z.object({
 
   DRIVE_PROVIDER: z.enum(['mock', 'real']).default('mock'),
   DRIVE_FOLDER_ID: z.string().optional(),
+
+  // MVP-1 — Lead Intake flow configuration
+  ADVISOR_NOTIFICATION_EMAIL: z.string().email().default('adi@cnt-fin.com'),
+  ADVISOR_USER_ID: z.string().default('advisor_adi'),
+  LEAD_FOLLOWUP_SLA_HOURS: z.coerce.number().int().positive().default(4),
 });
 
 export type Env = z.infer<typeof envSchema>;

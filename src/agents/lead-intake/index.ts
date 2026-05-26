@@ -6,6 +6,7 @@ export const LEAD_INTAKE_TOOLS = [
   'create_crm_process',
   'send_whatsapp_message',
   'send_email',
+  'create_followup_task',
 ] as const;
 
 export async function runLeadIntakeAgent(

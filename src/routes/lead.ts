@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { ValidationError } from '../shared/errors.js';
 import { runLeadIntakeAgent } from '../agents/lead-intake/index.js';
+import { loadEnv } from '../config/env.js';
 
 const bodySchema = z.object({
   full_name: z.string().min(1),
@@ -24,6 +25,10 @@ leadRouter.post(
         throw new ValidationError('Invalid lead payload', parsed.error.flatten());
       }
       const input = parsed.data;
+      const env = loadEnv();
+
+      const now = new Date();
+      const slaDeadline = new Date(now.getTime() + env.LEAD_FOLLOWUP_SLA_HOURS * 60 * 60 * 1000);
 
       // Hand straight to the Lead Intake agent — Master is not in the loop
       // for cold leads (they arrive structured, not as customer messages).
@@ -35,7 +40,13 @@ leadRouter.post(
         input.message ? `Message: ${input.message}` : null,
         input.metadata ? `Metadata: ${JSON.stringify(input.metadata)}` : null,
         '',
-        'Validate the contact data, check for duplicates, open a CRM process, and send a welcome message in Hebrew.',
+        '--- MVP-1 context ---',
+        `Now: ${now.toISOString()}`,
+        `Advisor user-id: ${env.ADVISOR_USER_ID}`,
+        `Advisor notification email: ${env.ADVISOR_NOTIFICATION_EMAIL}`,
+        `Follow-up SLA: schedule the task no later than ${slaDeadline.toISOString()} (within ${env.LEAD_FOLLOWUP_SLA_HOURS} hours).`,
+        '',
+        'Execute the full MVP-1 Lead Intake flow as documented in the system prompt: validate → dedup → create_crm_process → send_whatsapp_message → send_email (advisor notification) → create_followup_task.',
       ]
         .filter(Boolean)
         .join('\n');
